@@ -250,12 +250,9 @@ limit
 Что важно не упустить именно в этом раунде.
 ```
 
-После создания нового раунда снова сказать пользователю:
+После создания нового раунда Codex подхватит его автоматически — он уже ждёт появления `R<N+1>-01-round-start.md` в цикле ожидания (Шаг 8 reviewer-prompt.txt). Повторно передавать промпт пользователю не нужно.
 
-> **Передайте Codex:**
-> `Прочитай .claude/skills/codex-dual-review-file-based/reviewer-prompt.txt. При выполнении всех шагов заменяй {{SESSION_ID}} на <session_id> и {{ROUND_ID}} на R<N+1>.`
-
-Затем запустить фоновое ожидание (Bash, `run_in_background: true`):
+Запустить фоновое ожидание (Bash, `run_in_background: true`):
 
 ```bash
 bash .claude/skills/codex-dual-review-file-based/wait-for-review.sh <session_id> R<N+1>
