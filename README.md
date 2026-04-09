@@ -47,6 +47,20 @@ Every review enforces:
 - Each issue backed by evidence (file path, method name, logic)
 - Explicit checks for missed requirements, regression risks, and over-engineering
 
+## Design decisions
+
+- **Issues as hypotheses** — the initiator treats every reviewer issue as a hypothesis to verify, not a command to follow. Each issue gets an explicit verdict (`ACCEPTED`, `REJECTED`, `INLINE FIX`) with reasoning. This prevents the common pattern where an agent blindly applies all suggestions, including wrong ones.
+
+- **Claim flags for crash recovery** — `.flg` files mark that an agent has started processing a round. If the agent crashes mid-work, the next run detects the orphaned flag and resumes from the correct state instead of creating a duplicate or skipping the round.
+
+- **Append-only immutability** — no protocol file is ever overwritten or deleted during a session. This eliminates race conditions between agents and produces a complete audit trail by construction, not by discipline.
+
+- **Scope lock** — the review scope is fixed in round 1 and cannot change between rounds. This prevents scope creep where later rounds drift into unrelated areas and the review never converges.
+
+- **Round-start as contract** — `R*-01-round-start.md` is not just context but a binding contract: it lists what changed since the last round, which issues were accepted/rejected, and what the reviewer should focus on. The reviewer must verify claims against actual files.
+
+- **Background handoff** — a lightweight file watcher (`wait-for-review.sh`) runs in the background and notifies Claude Code when Codex completes its review. This makes round transitions seamless without polling loops in the agent's main thread.
+
 ## Installation
 
 Copy the `claude-code/` directory into your project's skills:
