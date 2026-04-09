@@ -9,9 +9,8 @@ Two AI agents review your plans and code iteratively — Claude Code as the init
 A single AI agent tends to be consistent with itself: it makes the same assumptions throughout a task and rarely questions its own decisions. A second, independent agent breaks this pattern:
 
 - **Blind spots** — each agent has different biases; cross-checking surfaces issues neither would find alone
-- **Evidence discipline** — the protocol requires every issue to cite a specific file, method, or logic chain, filtering out vague "maybe" suggestions
-- **Iterative convergence** — accepted issues are fixed and re-reviewed, rejected ones require explicit reasoning, so each round produces measurable progress
-- **Audit trail** — every round is a markdown file in `.dual-review/`, giving a full decision history for the team
+- **Confirmation resistance** — when one agent must defend a decision to another, weak reasoning gets exposed before it reaches production
+- **Higher signal** — two independent reviewers agreeing on an issue is a much stronger signal than one agent's self-assessment
 
 ## Environment
 
