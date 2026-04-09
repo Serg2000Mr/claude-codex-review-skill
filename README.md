@@ -2,11 +2,22 @@
 
 # Claude-Codex Review Skill
 
-Two AI agents review your plans and code iteratively — Claude Code as the initiator, Codex as an independent reviewer — coordinating through plain files with no server or orchestrator needed.
+Two AI agents review your plans and code iteratively — Claude Code as the initiator, Codex as an independent reviewer — catching issues that a single agent misses.
 
-## Why
+## Why dual review
 
-AI-generated plans and code benefit from a second opinion before implementation. But setting up a review pipeline between agents usually requires MCP servers, orchestrators, or custom infrastructure. This skill replaces all of that with a simple file-based protocol: agents read and write markdown files in a shared directory, each round producing a structured review with verdicts and evidence-backed issues.
+A single AI agent tends to be consistent with itself: it makes the same assumptions throughout a task and rarely questions its own decisions. A second, independent agent breaks this pattern:
+
+- **Blind spots** — each agent has different biases; cross-checking surfaces issues neither would find alone
+- **Evidence discipline** — the protocol requires every issue to cite a specific file, method, or logic chain, filtering out vague "maybe" suggestions
+- **Iterative convergence** — accepted issues are fixed and re-reviewed, rejected ones require explicit reasoning, so each round produces measurable progress
+- **Audit trail** — every round is a markdown file in `.dual-review/`, giving a full decision history for the team
+
+## Environment
+
+This skill is optimized and tested for **Claude Code and Codex running as VS Code extensions** in the same workspace. Both agents share the project directory and read/write files directly.
+
+This is not the MCP-based Codex integration or a CLI-mode workflow — it is a file-based protocol between two VS Code extension panels.
 
 ## How it works
 
@@ -69,8 +80,8 @@ docs/
 
 ## Requirements
 
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (CLI or VS Code extension)
-- [Codex](https://openai.com/index/codex/) (OpenAI) as the reviewer agent
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) as a VS Code extension
+- [Codex](https://openai.com/index/codex/) as a VS Code extension (in the same workspace)
 - Bash (for `wait-for-review.sh`)
 
 ## Limitations
