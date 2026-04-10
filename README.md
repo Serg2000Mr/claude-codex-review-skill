@@ -2,9 +2,9 @@
 
 # Claude-Codex Review Skill
 
-Two AI agents review your plans and code iteratively — Claude Code as the initiator, Codex as an independent reviewer — catching issues that a single agent misses.
+Two AI agents review your plans and code iteratively — Claude Code as the initiator, Codex as an independent reviewer — catching issues that a single agent misses. Up to 5 rounds.
 
-## Why dual review
+## Why review with a different model
 
 A single AI agent tends to be consistent with itself: it makes the same assumptions throughout a task and rarely questions its own decisions. A second, independent agent breaks this pattern:
 
@@ -14,9 +14,12 @@ A single AI agent tends to be consistent with itself: it makes the same assumpti
 
 ## Environment
 
-This skill is optimized and tested for **Claude Code and Codex running as VS Code extensions** in the same workspace. Both agents share the project directory and read/write files directly.
+This skill is optimized and tested for **Claude Code and Codex running as VS Code extensions** in the same workspace. Both agents share the project directory and read/write files directly. Recommended pairing as of April 2026 — **Opus** or **Sonnet 4.6** vs. **GPT 5.4 extra high**. Using Sonnet instead of Opus even for the plan is smoothed out by the presence of a strong model as the reviewer.
 
-This is not the MCP-based Codex integration or a CLI-mode workflow — it is a file-based protocol between two VS Code extension panels.
+Implemented as a robust file-based protocol between two VS Code extension panels, not as an MCP-based Codex integration or a CLI-mode workflow.
+
+<img width="1750" height="942" alt="image" src="https://github.com/user-attachments/assets/c027e995-3df2-489a-9a81-e046e2936f38" />
+Example of a VS Code workspace layout with two extensions.
 
 ## How it works
 
