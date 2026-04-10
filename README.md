@@ -103,6 +103,3 @@ docs/
 - The `wait-for-review.sh` watcher polls every 10 seconds; not instant
 - Session files are append-only by design — no file is ever overwritten or deleted during a session
 
-## License
-
-MIT
