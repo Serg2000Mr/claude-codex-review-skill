@@ -31,6 +31,8 @@ R1-02-codex-claimed.flg  <- Codex забирает раунд
 R1-03-codex-review.md    <- Codex пишет структурированное ревью
 R1-04-claude-claimed.flg <- Claude обрабатывает результат
 ```
+<img width="639" height="293" alt="image" src="https://github.com/user-attachments/assets/96805bd8-bffc-4358-8afb-95c2e1d174d4" />
+
 
 В каждом раунде Claude анализирует обратную связь — принимает, отклоняет или исправляет каждое замечание с явной аргументацией. Если вердикт `NEEDS_WORK`, Claude вносит изменения и открывает новый раунд. Цикл продолжается до `APPROVED`, `REJECTED` или достижения `max_rounds`, после чего создаётся `final.md` с итогом сессии.
 
