@@ -101,13 +101,19 @@ Source of truth — только файлы в `.dual-review/<session_id>/`.
 > **Передайте Codex:**
 > `Прочитай .claude/skills/codex-dual-review-file-based/reviewer-prompt.txt. При выполнении всех шагов заменяй {{SESSION_ID}} на <session_id> и {{ROUND_ID}} на R1.`
 
-Затем запустить фоновое ожидание (Bash, `run_in_background: true`):
+Затем запустить Monitor:
 
-```bash
-bash .claude/skills/codex-dual-review-file-based/wait-for-review.sh <session_id> R1
+```
+description: "Ожидание R1-03-codex-review.md в dual-review сессии <session_id>"
+persistent: false
+timeout_ms: 1800000
+command:
+  TARGET=".dual-review/<session_id>/R1-03-codex-review.md"
+  while [ ! -f "$TARGET" ]; do sleep 10; done
+  echo "review ready: $TARGET"
 ```
 
-Подставить реальный `session_id`. Завершить ход. Когда Codex запишет файл — Claude получит уведомление и автоматически перейдёт к Шагу 5.
+Подставить реальный `session_id`. Завершить ход. Когда Monitor выведет строку — перейти к Шагу 5.
 
 ### Шаг 5. Обработать результат раунда
 
@@ -252,13 +258,19 @@ limit
 
 После создания нового раунда Codex подхватит его автоматически — он уже ждёт появления `R<N+1>-01-round-start.md` в цикле ожидания (Шаг 8 reviewer-prompt.txt). Повторно передавать промпт пользователю не нужно.
 
-Запустить фоновое ожидание (Bash, `run_in_background: true`):
+Запустить Monitor:
 
-```bash
-bash .claude/skills/codex-dual-review-file-based/wait-for-review.sh <session_id> R<N+1>
+```
+description: "Ожидание R<N+1>-03-codex-review.md в dual-review сессии <session_id>"
+persistent: false
+timeout_ms: 1800000
+command:
+  TARGET=".dual-review/<session_id>/R<N+1>-03-codex-review.md"
+  while [ ! -f "$TARGET" ]; do sleep 10; done
+  echo "review ready: $TARGET"
 ```
 
-Подставить реальные `session_id` и номер раунда. Завершить ход. Когда Codex запишет файл — Claude получит уведомление и автоматически перейдёт к Шагу 5.
+Подставить реальные `session_id` и номер раунда. Завершить ход. Когда Monitor выведет строку — перейти к Шагу 5.
 
 Во всех финальных ветках после записи `.dual-review/<session_id>/final.md` сразу показать пользователю короткое видимое сообщение:
 - заголовок `**Итог Dual Review**`;
