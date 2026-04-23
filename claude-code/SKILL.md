@@ -1,6 +1,6 @@
 ---
 name: codex-dual-review-file-based
-description: "File-based dual-review с Codex как reviewer. Использует каталог `.dual-review/<session_id>/` и файлы `R*-01-round-start.md`, `R*-02-codex-claimed.flg`, `R*-03-codex-review.md`, `R*-04-claude-claimed.flg`, `final.md` как source of truth. Используй когда пользователь хочет dual-review через файлы или нужен file-based fallback."
+description: "File-based dual-review с Codex как reviewer. Синхронизация через файлы раундов в каталоге `.dual-review/` (один подкаталог на сессию, протокольные файлы round-start, codex-review, final как source of truth). Используй когда пользователь хочет dual-review через файлы или нужен file-based fallback — асинхронная проверка плана или продакшен-изменения, когда прямой диалог с Codex недоступен."
 ---
 
 # Codex Dual Review (File-Based)

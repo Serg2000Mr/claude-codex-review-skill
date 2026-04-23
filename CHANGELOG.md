@@ -12,6 +12,9 @@ This project uses a lightweight Keep a Changelog style. Dates are in UTC.
 
 ### Changed
 - Clarified Codex runtime behavior in `claude-code/reviewer-prompt.txt`: round and session summaries must go through `commentary`, `final` is reserved for true completion, and Step 8 requires a real poll-and-sleep wait loop.
+- Reworded the `description` in `claude-code/SKILL.md`: removed angle brackets (forbidden in frontmatter per Anthropic skills guidelines) and added clearer trigger phrases for async plan/production-change review.
+- Added a Trivially-passing test check to `claude-code/reviewer-prompt.txt` for the `production-change` review scope.
+- Made `claude-code/wait-for-review.sh` resolve `PROJECT_ROOT` via `BASH_SOURCE`, so the script works regardless of the caller's working directory.
 
 ## [2026-04-16]
 ### Changed
