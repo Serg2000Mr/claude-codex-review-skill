@@ -2,107 +2,98 @@
 
 # Claude-Codex Review Skill
 
-Two AI agents review your plans and code iteratively — Claude Code as the initiator, Codex as an independent reviewer — catching issues that a single agent misses. Up to 5 rounds.
+This skill lets Claude Code and Codex review a plan or code change through a crash-resilient file protocol. Claude Code initiates the session, Codex acts as an independent reviewer, and both agents use the same project directory without an MCP server or CLI bridge.
 
-## Why review with a different model
+## Quick start
 
-A single AI agent tends to be consistent with itself: it makes the same assumptions throughout a task and rarely questions its own decisions. A second, independent agent breaks this pattern:
-
-- **Blind spots** — each agent has different biases; cross-checking surfaces issues neither would find alone
-- **Confirmation resistance** — when one agent must defend a decision to another, weak reasoning gets exposed before it reaches production
-- **Higher signal** — two independent reviewers agreeing on an issue is a much stronger signal than one agent's self-assessment
-
-## Environment
-
-This skill is optimized and tested for **Claude Code and Codex running as VS Code extensions** in the same workspace. Both agents share the project directory and read/write files directly. Recommended pairing as of April 2026 — **Opus** or **Sonnet 4.6** vs. **GPT 5.4 extra high**. Using Sonnet instead of Opus even for the plan is smoothed out by the presence of a strong model as the reviewer.
-
-Implemented as a robust file-based protocol between two VS Code extension panels, not as an MCP-based Codex integration or a CLI-mode workflow.
-
-<img width="1750" height="942" alt="image" src="https://github.com/user-attachments/assets/c027e995-3df2-489a-9a81-e046e2936f38" />
-Example of a VS Code workspace layout with two extensions.
-
-## How it works
-
-A review session lives in `.dual-review/<session_id>/` and progresses through rounds:
-
-```
-R1-01-round-start.md     <- Claude prepares review context
-R1-02-codex-claimed.flg  <- Codex claims the round
-R1-03-codex-review.md    <- Codex writes structured review
-R1-04-claude-claimed.flg <- Claude processes the review
-```
-
-Each round, Claude analyzes the feedback — accepting, rejecting, or inline-fixing each issue with explicit reasoning. If the verdict is `NEEDS_WORK`, Claude applies changes and opens a new round. The cycle continues until `APPROVED`, `REJECTED`, or `max_rounds` is reached, producing a `final.md` with the session outcome.
-
-### Review scopes
-
-| Scope | When to use |
-|---|---|
-| `plan-only` | Reviewing a plan before any code changes |
-| `production-change` | Reviewing actual code changes |
-| `architecture-check` | Evaluating an architectural decision |
-| `lookup-test` | Verifying a hypothesis or API behavior |
-
-### Quality contract
-
-Every review enforces:
-- Only significant issues — no stylistic nitpicks or weak hypotheses
-- Each issue backed by evidence (file path, method name, logic)
-- Explicit checks for missed requirements, regression risks, and over-engineering
-
-## Design decisions
-
-- **Issues as hypotheses** — the initiator treats every reviewer issue as a hypothesis to verify, not a command to follow. Each issue gets an explicit verdict (`ACCEPTED`, `REJECTED`, `INLINE FIX`) with reasoning. This prevents the common pattern where an agent blindly applies all suggestions, including wrong ones.
-
-- **Claim flags for crash recovery** — `.flg` files mark that an agent has started processing a round. If the agent crashes mid-work, the next run detects the orphaned flag and resumes from the correct state instead of creating a duplicate or skipping the round.
-
-- **Append-only immutability** — no protocol file is ever overwritten or deleted during a session. This eliminates race conditions between agents and produces a complete audit trail by construction, not by discipline.
-
-- **Scope lock** — the review scope is fixed in round 1 and cannot change between rounds. This prevents scope creep where later rounds drift into unrelated areas and the review never converges.
-
-- **Round-start as contract** — `R*-01-round-start.md` is not just context but a binding contract: it lists what changed since the last round, which issues were accepted/rejected, and what the reviewer should focus on. The reviewer must verify claims against actual files.
-
-- **Background handoff** — a lightweight file watcher (`wait-for-review.sh`) runs in the background and notifies Claude Code when Codex completes its review. This makes round transitions seamless without polling loops in the agent's main thread.
-
-## Installation
-
-Copy the `claude-code/` directory into your project's skills:
+Copy the complete `claude-code/` directory into the project skill directory:
 
 ```bash
 mkdir -p .claude/skills/codex-dual-review-file-based
 cp claude-code/* .claude/skills/codex-dual-review-file-based/
 ```
 
-## Usage
+Then run in Claude Code:
 
-In Claude Code:
-
-```
+```text
 /codex-dual-review-file-based <task description> [path/to/plan.md] [max_rounds=5]
 ```
 
-Claude prepares the first round and prompts you to pass the reviewer instructions to Codex. A background file watcher detects when Codex completes its review and automatically triggers the next step.
+Claude Code creates the first round and prints one ready-to-use instruction for Codex. Codex keeps watching the same session for later rounds; the user does not need to pass the prompt again.
 
-## File structure
+## How it works
 
+Each session lives in an absolute `<project_root>/.dual-review/<session_id>/` directory. If Claude Code runs inside a Git worktree, the session remains inside that worktree.
+
+```text
+R1-01-round-start.md     <- Claude writes the review contract
+R1-02-codex-claimed.flg  <- Codex claims the round
+R1-03-codex-review.md    <- Codex writes the review
+R1-04-claude-claimed.flg <- Claude processes the result
+final.md                 <- Claude records the session outcome
 ```
+
+Round-start and review files contain a machine-readable JSON block plus a human-readable explanation. Claude verifies every finding as a hypothesis, applies accepted changes before opening the next round, and records rejected findings with evidence.
+
+The session ends with:
+
+- `approved` after `APPROVED`;
+- `failed` after the rare `REJECTED` verdict;
+- `limit` when `max_rounds` is reached.
+
+`APPROVED` alone does not finish a session: `final.md` is the completion marker.
+
+## Protocol guarantees
+
+- Session files are append-only: protocol files are never overwritten or deleted.
+- Absolute `SESSION_DIR`, reviewer-prompt, and helper-script paths prevent main-checkout/worktree mix-ups.
+- Claim flags allow interrupted agents to resume from files instead of reconstructing state from chat.
+- Review scope is fixed in round 1 and cannot drift between rounds.
+- JSON fields provide a stable contract for verdicts, severity, confidence, evidence, and finding IDs.
+- Missing or malformed review JSON is reported as a recoverable protocol error instead of being guessed from prose.
+
+## Review scopes
+
+| Scope | When to use |
+|---|---|
+| `plan-only` | Review a plan before code changes |
+| `production-change` | Review actual code and tests |
+| `architecture-check` | Evaluate an architectural decision |
+| `lookup-test` | Verify a hypothesis or API behavior |
+
+## Environment
+
+The protocol requires Claude Code and Codex to have read/write access to the same project directory. It works with project-local or global skill installation because the prompt and wait scripts are resolved from the loaded `SKILL.md` directory.
+
+Use the bundled helper that matches the environment:
+
+- `wait-for-review.ps1` on Windows with PowerShell;
+- `wait-for-review.sh` on macOS, Linux, or Git Bash.
+
+Both helpers accept an absolute session directory, validate the round, use adaptive polling, return a compact JSON result, and stop after a configurable timeout.
+
+## Design decisions
+
+- **Different model, independent assumptions.** A second agent is useful because it does not automatically preserve the initiator's blind spots.
+- **Findings are hypotheses.** Claude accepts, rejects, or fixes each finding with explicit reasoning; reviewer suggestions are not commands.
+- **Round-start is a contract.** Claims about completed changes must match the actual files listed for review.
+- **Files are the source of truth.** A restarted agent resumes from `.dual-review/<session_id>/`, not from chat history.
+
+## Repository structure
+
+```text
 claude-code/
-  SKILL.md              # Initiator protocol (Claude Code skill definition)
-  reviewer-prompt.txt   # Reviewer protocol (prompt for Codex)
-  wait-for-review.sh    # Background watcher script
+  SKILL.md              # Claude Code initiator protocol
+  reviewer-prompt.txt   # Codex reviewer protocol
+  wait-for-review.ps1   # Windows wait helper
+  wait-for-review.sh    # Bash wait helper
 docs/
-  review-findings.md    # Protocol self-review (design decisions, edge cases)
+  review-findings.md    # Historical self-review of the original protocol
 ```
-
-## Requirements
-
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) as a VS Code extension
-- [Codex](https://openai.com/index/codex/) as a VS Code extension (in the same workspace)
-- Bash (for `wait-for-review.sh`)
 
 ## Limitations
 
-- Codex must have read/write access to the `.dual-review/` directory in the project
-- The `wait-for-review.sh` watcher polls every 10 seconds; not instant
-- Session files are append-only by design — no file is ever overwritten or deleted during a session
-
+- This repository implements Claude Code as initiator and Codex as reviewer; the reverse direction is outside its current scope.
+- Both agents must keep access to the same project or worktree for the duration of the session.
+- File polling is intentionally simple and may detect a transition a few seconds after it occurs.
+- A session can run for up to five rounds by default.

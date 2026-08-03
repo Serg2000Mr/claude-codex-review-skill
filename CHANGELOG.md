@@ -6,6 +6,20 @@ This project uses a lightweight Keep a Changelog style. Dates are in UTC.
 
 ## [Unreleased]
 
+### Added
+- Added a machine-readable JSON contract to round-start and review files.
+- Added `wait-for-review.ps1` for native Windows sessions.
+
+### Changed
+- Made session, reviewer-prompt, and wait-script paths absolute and safe for Git worktrees.
+- Made skill assets self-locating so project-local and global installations use the files that belong to the loaded skill.
+- Updated both wait helpers to validate arguments, use adaptive polling, return compact JSON, and enforce a timeout.
+- Updated English and Russian documentation around installation, recovery, completion, and supported environments.
+
+### Removed
+- Removed model-version recommendations that become stale independently of the protocol.
+- Removed Codex channel-specific `commentary`/`final` instructions; the protocol now defines visible summaries without prescribing runtime channels.
+
 ## [2026-04-23]
 ### Added
 - Added `CHANGELOG.md` to track notable repository changes.
